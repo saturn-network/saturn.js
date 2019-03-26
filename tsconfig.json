@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "module": "commonjs",
+        "target": "es2015",
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "rootDir": "src",
+        "outDir": "./dist",
+        "declaration": true,
+        "moduleResolution": "node",
+        "noUnusedLocals": true,
+        "removeComments": true,
+        "pretty": false
+    },
+    "exclude": [
+        "node_modules",
+        "*.d.ts"
+    ]
+}
