@@ -114,7 +114,7 @@ export class RequestManager {
 
   async getExchangeContract(blockchain: string) : Promise<string | Error> {
     let url = `${this.apiurl}/orders/contracts.json`
-    let result = (await axios.get(url)).data[blockchain.toLowerCase()]
+    let result = (await axios.get(url)).data[blockchain.toUpperCase()]
     if (result == null) {
       return Promise.reject(new Error(`Unable to fetch contract address for blockchain ${blockchain}`))
     }

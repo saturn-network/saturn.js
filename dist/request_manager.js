@@ -128,7 +128,7 @@ class RequestManager {
     getExchangeContract(blockchain) {
         return __awaiter(this, void 0, void 0, function* () {
             let url = `${this.apiurl}/orders/contracts.json`;
-            let result = (yield axios_1.default.get(url)).data[blockchain.toLowerCase()];
+            let result = (yield axios_1.default.get(url)).data[blockchain.toUpperCase()];
             if (result == null) {
                 return Promise.reject(new Error(`Unable to fetch contract address for blockchain ${blockchain}`));
             }
