@@ -106,8 +106,10 @@ export class RequestManager {
     while (true) {
       try {
         transaction = await this.getTransaction(tx, this.blockchainName(blockchain))
-        spinner.clear()
-        spinner.stop()
+        if (spinner) {
+          spinner.clear()
+          spinner.stop()
+        }
         break
       } catch (e) {
         await sleep(5000)

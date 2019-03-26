@@ -118,8 +118,10 @@ class RequestManager {
             while (true) {
                 try {
                     transaction = yield this.getTransaction(tx, this.blockchainName(blockchain));
-                    spinner.clear();
-                    spinner.stop();
+                    if (spinner) {
+                        spinner.clear();
+                        spinner.stop();
+                    }
                     break;
                 }
                 catch (e) {
