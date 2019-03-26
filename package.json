@@ -1,0 +1,52 @@
+{
+    "name": "saturn.js",
+    "version": "0.0.1",
+    "description": "Javascript client for interacting with Saturn Network decentralized exchange",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "keywords": [
+        "blockchain",
+        "eth",
+        "etc",
+        "ethereum",
+        "ethereum classic",
+        "crypto",
+        "exchange",
+        "trading",
+        "airdrop",
+        "token",
+        "erc20",
+        "erc223",
+        "saturn",
+        "dex",
+        "decentralized"
+    ],
+    "license": "LGPL-3.0",
+    "author": "Saturn Network",
+    "homepage": "https://github.com/saturn-network/saturn.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/saturn-network/saturn.js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/saturn-network/saturn.js/issues"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "watch": "tsc -w",
+        "build": "rm -rf dist/* && tsc",
+        "prepublish": "rm -rf dist/* && tsc"
+    },
+    "devDependencies": {
+        "@types/lodash": "^4.14.119",
+        "typescript": "^3.1.6"
+    },
+    "dependencies": {
+        "axios": "^0.18.0",
+        "chalk": "^2.4.1",
+        "ethers": "^4.0.18",
+        "fraction.js": "^4.0.11",
+        "lodash": "^4.17.11",
+        "ora": "^3.0.0"
+    }
+}

@@ -1,0 +1,30 @@
+import { Signer } from 'ethers';
+import { RequestManager } from '../request_manager';
+export declare class Web3Interface {
+    readonly wallet: Signer;
+    readonly blockchain: string;
+    readonly query: RequestManager;
+    private exchangeAbi;
+    constructor(wallet: Signer, blockchain: string, requestManager: RequestManager);
+    newTrade(amount: number, orderTx: string): Promise<string>;
+    newOrder(tokenAddress: string, orderType: string, amount: number, price: number): Promise<string>;
+    cancelOrder(orderId: number, contract: string): Promise<string>;
+    private newBuyOrder;
+    private newERC223sellOrder;
+    private newERC20sellOrder;
+    private newERC223Trade;
+    private newERC20Trade;
+    private newEtherTrade;
+    private verifyCapacity;
+    private verifyAllowance;
+    private determineTokenType;
+    private isERC223;
+    private isERC20;
+    private verifyOrderTradable;
+    private verifyTokenBalance;
+    private verifyEtherBalance;
+    private getGasPrice;
+    private verifyOrderType;
+    private createERC223OrderPayload;
+    private toUint;
+}
