@@ -73,14 +73,16 @@ export class RequestManager {
   }
 
   async awaitTransaction(tx: string, blockchain: string | Web3Interface, text?: string) : Promise<Transaction> {
-    let transaction: Transaction | Error
+    let transaction: Transaction | Error, spinner : any
     if (!text) {
       text = `Awaiting transaction ${tx}`
     }
-    let spinner = ora({
-      text: text,
-      color: this.pickColor(this.blockchainName(blockchain))
-    }).start()
+    if (this.isCLI()) {
+      spinner = ora({
+        text: text,
+        color: this.pickColor(this.blockchainName(blockchain))
+      }).start()
+    }
     if (blockchain instanceof Web3Interface) {
       try {
         await blockchain.wallet.provider.waitForTransaction(tx)
@@ -93,8 +95,10 @@ export class RequestManager {
         }
       } catch (e) {
         if (e instanceof TxFailedError) {
-          spinner.clear()
-          spinner.stop()
+          if (spinner) {
+            spinner.clear()
+            spinner.stop()
+          }
           throw e
         }
       }
@@ -166,5 +170,9 @@ export class RequestManager {
 
   private blockchainName(obj: string | Web3Interface ) : string {
     return obj instanceof Web3Interface ? obj.blockchain : obj
+  }
+
+  private isCLI() : boolean {
+    return !(typeof window !== 'undefined' && typeof window.document !== 'undefined')
   }
 }

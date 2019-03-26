@@ -86,14 +86,16 @@ class RequestManager {
     }
     awaitTransaction(tx, blockchain, text) {
         return __awaiter(this, void 0, void 0, function* () {
-            let transaction;
+            let transaction, spinner;
             if (!text) {
                 text = `Awaiting transaction ${tx}`;
             }
-            let spinner = ora_1.default({
-                text: text,
-                color: this.pickColor(this.blockchainName(blockchain))
-            }).start();
+            if (this.isCLI()) {
+                spinner = ora_1.default({
+                    text: text,
+                    color: this.pickColor(this.blockchainName(blockchain))
+                }).start();
+            }
             if (blockchain instanceof exchange_1.Web3Interface) {
                 try {
                     yield blockchain.wallet.provider.waitForTransaction(tx);
@@ -105,8 +107,10 @@ class RequestManager {
                 }
                 catch (e) {
                     if (e instanceof TxFailedError) {
-                        spinner.clear();
-                        spinner.stop();
+                        if (spinner) {
+                            spinner.clear();
+                            spinner.stop();
+                        }
                         throw e;
                     }
                 }
@@ -187,6 +191,9 @@ class RequestManager {
     }
     blockchainName(obj) {
         return obj instanceof exchange_1.Web3Interface ? obj.blockchain : obj;
+    }
+    isCLI() {
+        return !(typeof window !== 'undefined' && typeof window.document !== 'undefined');
     }
 }
 exports.RequestManager = RequestManager;

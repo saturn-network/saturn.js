@@ -17,4 +17,5 @@ export declare class RequestManager {
     tradeHistory(token: string, blockchain: string): Promise<object>;
     private pickColor;
     private blockchainName;
+    private isCLI;
 }
