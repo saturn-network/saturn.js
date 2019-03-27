@@ -315,6 +315,6 @@ export class Web3Interface {
   }
 
   private toUint(num : number) : string {
-    return _.padStart(utils.hexlify(num).substring(2), 64, '0')
+    return _.padStart(utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0')
   }
 }

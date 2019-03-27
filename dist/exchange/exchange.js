@@ -290,7 +290,7 @@ class Web3Interface {
         return '0x' + this.toUint(price.n) + this.toUint(price.d) + paddedToken.substring(2);
     }
     toUint(num) {
-        return lodash_1.default.padStart(ethers_1.utils.hexlify(num).substring(2), 64, '0');
+        return lodash_1.default.padStart(ethers_1.utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0');
     }
 }
 exports.Web3Interface = Web3Interface;
