@@ -13,9 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const ora_1 = __importDefault(require("ora"));
+const isUndefined_1 = __importDefault(require("lodash/isUndefined"));
 const exchange_1 = require("./exchange");
 const utils_1 = require("./utils");
-const etherAddress = '0x0000000000000000000000000000000000000000';
 class TxFailedError extends Error {
 }
 class RequestManager {
@@ -100,14 +100,13 @@ class RequestManager {
                 try {
                     yield blockchain.wallet.provider.waitForTransaction(tx);
                     let receipt = yield blockchain.wallet.provider.getTransactionReceipt(tx);
-                    const gaslimit = '400000';
-                    if (receipt.status === 0 || receipt.gasUsed.toString() === gaslimit) {
+                    if (receipt.status === 0 || receipt.gasUsed.toString() === utils_1.gaslimit.toString()) {
                         throw new TxFailedError(`Transaction ${tx} on ${this.blockchainName(blockchain)} failed.`);
                     }
                 }
                 catch (e) {
                     if (e instanceof TxFailedError) {
-                        if (spinner) {
+                        if (!isUndefined_1.default(spinner)) {
                             spinner.clear();
                             spinner.stop();
                         }
@@ -118,7 +117,7 @@ class RequestManager {
             while (true) {
                 try {
                     transaction = yield this.getTransaction(tx, this.blockchainName(blockchain));
-                    if (spinner) {
+                    if (!isUndefined_1.default(spinner)) {
                         spinner.clear();
                         spinner.stop();
                     }
@@ -153,7 +152,7 @@ class RequestManager {
     }
     orderbook(token, blockchain) {
         return __awaiter(this, void 0, void 0, function* () {
-            let url = `${this.apiurl}/orders/${blockchain}/${token}/${etherAddress}/all.json`;
+            let url = `${this.apiurl}/orders/${blockchain}/${token}/${utils_1.etherAddress}/all.json`;
             let result = yield axios_1.default.get(url);
             if (result == null) {
                 return Promise.reject(new Error(`Unable to fetch orderbook for token ${blockchain}:${token}`));
@@ -173,7 +172,7 @@ class RequestManager {
     }
     tradeHistory(token, blockchain) {
         return __awaiter(this, void 0, void 0, function* () {
-            let url = `${this.apiurl}/trades/${blockchain}/${token}/${etherAddress}/all.json`;
+            let url = `${this.apiurl}/trades/${blockchain}/${token}/${utils_1.etherAddress}/all.json`;
             let result = yield axios_1.default.get(url);
             if (result == null) {
                 return Promise.reject(new Error(`Unable to fetch trade history for token ${blockchain}:${token}`));

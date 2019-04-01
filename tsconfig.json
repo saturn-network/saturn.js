@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "incremental": true,
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "module": "commonjs",
@@ -9,7 +10,7 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "forceConsistentCasingInFileNames": true,
-        "rootDir": "src",
+        "rootDir": "./src",
         "outDir": "./dist",
         "declaration": true,
         "moduleResolution": "node",
@@ -19,6 +20,7 @@
     },
     "exclude": [
         "node_modules",
+        "dist",
         "*.d.ts"
     ]
 }

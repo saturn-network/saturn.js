@@ -1,20 +1,19 @@
 import Fraction from 'fraction.js'
 import axios from 'axios'
-import _ from 'lodash'
+
+import includes from 'lodash/includes'
+import padStart from 'lodash/padStart'
 
 import { Signer, Contract, utils } from 'ethers'
 import { FunctionFragment, BigNumber } from 'ethers/utils'
 
 import { RequestManager } from '../request_manager'
 import { Order } from './types'
+import { etherDecimals, etherAddress, gaslimit } from '../utils'
 
 import exchange from './exchangeConfig.json'
 import erc223 from './erc223.json'
 import erc20 from './erc20.json'
-
-const etherDecimals = 18
-const gaslimit = 400000
-const etherAddress = '0x0000000000000000000000000000000000000000'
 
 let toSuitableBigNumber = function(n : Number | String | BigNumber | Fraction) : BigNumber {
   if (n instanceof BigNumber) { return n }
@@ -304,7 +303,7 @@ export class Web3Interface {
 
   private verifyOrderType(orderType: string) {
     let types = ["buy", "sell"]
-    if (! _.includes(types, orderType)) {
+    if (!includes(types, orderType)) {
       throw new Error(`Unknown order type ${orderType}`)
     }
   }
@@ -315,6 +314,6 @@ export class Web3Interface {
   }
 
   private toUint(num : number) : string {
-    return _.padStart(utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0')
+    return padStart(utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0')
   }
 }

@@ -1,11 +1,10 @@
 import axios from 'axios'
 import ora from 'ora'
+import isUndefined from 'lodash/isUndefined'
 
 import { Transaction, Order, Trade, Token } from './exchange/types'
 import { Web3Interface } from './exchange'
-import { sleep } from './utils'
-
-const etherAddress = '0x0000000000000000000000000000000000000000'
+import { etherAddress, gaslimit, sleep } from './utils'
 
 class TxFailedError extends Error {}
 
@@ -89,13 +88,12 @@ export class RequestManager {
         let receipt = await blockchain.wallet.provider.getTransactionReceipt(tx)
         // dirty hack for ETC
         // can remove the gasUsed check once ETC merges ECIPs for Byzantium
-        const gaslimit = '400000'
-        if (receipt.status === 0 || receipt.gasUsed.toString() === gaslimit) {
+        if (receipt.status === 0 || receipt.gasUsed.toString() === gaslimit.toString()) {
           throw new TxFailedError(`Transaction ${tx} on ${this.blockchainName(blockchain)} failed.`)
         }
       } catch (e) {
         if (e instanceof TxFailedError) {
-          if (spinner) {
+          if (!isUndefined(spinner)) {
             spinner.clear()
             spinner.stop()
           }
@@ -106,7 +104,7 @@ export class RequestManager {
     while (true) {
       try {
         transaction = await this.getTransaction(tx, this.blockchainName(blockchain))
-        if (spinner) {
+        if (!isUndefined(spinner)) {
           spinner.clear()
           spinner.stop()
         }

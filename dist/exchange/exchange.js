@@ -13,15 +13,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fraction_js_1 = __importDefault(require("fraction.js"));
 const axios_1 = __importDefault(require("axios"));
-const lodash_1 = __importDefault(require("lodash"));
+const includes_1 = __importDefault(require("lodash/includes"));
+const padStart_1 = __importDefault(require("lodash/padStart"));
 const ethers_1 = require("ethers");
 const utils_1 = require("ethers/utils");
+const utils_2 = require("../utils");
 const exchangeConfig_json_1 = __importDefault(require("./exchangeConfig.json"));
 const erc223_json_1 = __importDefault(require("./erc223.json"));
 const erc20_json_1 = __importDefault(require("./erc20.json"));
-const etherDecimals = 18;
-const gaslimit = 400000;
-const etherAddress = '0x0000000000000000000000000000000000000000';
 let toSuitableBigNumber = function (n) {
     if (n instanceof utils_1.BigNumber) {
         return n;
@@ -97,7 +96,7 @@ class Web3Interface {
         return __awaiter(this, void 0, void 0, function* () {
             let exchange = new ethers_1.Contract(contract, this.exchangeAbi, this.wallet);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield exchange.cancelOrder(orderId, { gasPrice: gasPrice, gasLimit: gaslimit });
+            let tx = yield exchange.cancelOrder(orderId, { gasPrice: gasPrice, gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -107,11 +106,11 @@ class Web3Interface {
             let exchange = new ethers_1.Contract(orderContract, this.exchangeAbi, this.wallet);
             let decimals = yield token.decimals();
             let parsedPrice = new fraction_js_1.default(price)
-                .mul(new fraction_js_1.default(10).pow(etherDecimals))
+                .mul(new fraction_js_1.default(10).pow(utils_2.etherDecimals))
                 .div(new fraction_js_1.default(10).pow(Number(decimals.toString())));
-            let parsedAmount = new fraction_js_1.default(amount * price).mul(new fraction_js_1.default(10).pow(etherDecimals));
+            let parsedAmount = new fraction_js_1.default(amount * price).mul(new fraction_js_1.default(10).pow(utils_2.etherDecimals));
             let gasPrice = yield this.getGasPrice();
-            let tx = yield exchange.sellEther(tokenAddress, toSuitableBigNumber(parsedPrice.n), toSuitableBigNumber(parsedPrice.d), { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount), gasLimit: gaslimit });
+            let tx = yield exchange.sellEther(tokenAddress, toSuitableBigNumber(parsedPrice.n), toSuitableBigNumber(parsedPrice.d), { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount), gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -122,12 +121,12 @@ class Web3Interface {
             let parsedAmount = new fraction_js_1.default(amount)
                 .mul(new fraction_js_1.default(10).pow(Number(decimals.toString())));
             let parsedPrice = new fraction_js_1.default(price)
-                .mul(new fraction_js_1.default(10).pow(etherDecimals))
+                .mul(new fraction_js_1.default(10).pow(utils_2.etherDecimals))
                 .div(new fraction_js_1.default(10).pow(Number(decimals.toString())));
             parsedPrice = new fraction_js_1.default(1).div(parsedPrice);
-            let payload = this.createERC223OrderPayload(parsedPrice, etherAddress);
+            let payload = this.createERC223OrderPayload(parsedPrice, utils_2.etherAddress);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield token.transfer(orderContract, toSuitableBigNumber(parsedAmount), payload, { gasPrice: gasPrice, gasLimit: gaslimit });
+            let tx = yield token.transfer(orderContract, toSuitableBigNumber(parsedAmount), payload, { gasPrice: gasPrice, gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -139,12 +138,12 @@ class Web3Interface {
             let parsedAmount = new fraction_js_1.default(amount)
                 .mul(new fraction_js_1.default(10).pow(Number(decimals.toString())));
             let parsedPrice = new fraction_js_1.default(price)
-                .mul(new fraction_js_1.default(10).pow(etherDecimals))
+                .mul(new fraction_js_1.default(10).pow(utils_2.etherDecimals))
                 .div(new fraction_js_1.default(10).pow(Number(decimals.toString())));
             parsedPrice = new fraction_js_1.default(1).div(parsedPrice);
             yield this.verifyAllowance(token, parsedAmount, orderContract);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield exchange.sellERC20Token(tokenAddress, etherAddress, toSuitableBigNumber(parsedAmount), toSuitableBigNumber(parsedPrice.n), toSuitableBigNumber(parsedPrice.d), { gasPrice: gasPrice, gasLimit: gaslimit });
+            let tx = yield exchange.sellERC20Token(tokenAddress, utils_2.etherAddress, toSuitableBigNumber(parsedAmount), toSuitableBigNumber(parsedPrice.n), toSuitableBigNumber(parsedPrice.d), { gasPrice: gasPrice, gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -155,7 +154,7 @@ class Web3Interface {
                 .mul(new fraction_js_1.default(10).pow(order.buytoken.decimals));
             let payload = '0x' + this.toUint(order.order_id);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield token.transfer(order.contract, toSuitableBigNumber(parsedAmount), payload, { gasPrice: gasPrice, gasLimit: gaslimit });
+            let tx = yield token.transfer(order.contract, toSuitableBigNumber(parsedAmount), payload, { gasPrice: gasPrice, gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -167,7 +166,7 @@ class Web3Interface {
                 .mul(new fraction_js_1.default(10).pow(order.buytoken.decimals));
             yield this.verifyAllowance(token, parsedAmount, order.contract);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield exchange.buyOrderWithERC20Token(order.order_id, tokenAddress, toSuitableBigNumber(parsedAmount), { gasPrice: gasPrice, gasLimit: gaslimit });
+            let tx = yield exchange.buyOrderWithERC20Token(order.order_id, tokenAddress, toSuitableBigNumber(parsedAmount), { gasPrice: gasPrice, gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -179,7 +178,7 @@ class Web3Interface {
             let parsedAmount = new fraction_js_1.default(amount).mul(new fraction_js_1.default(10).pow(decimals));
             let requiredEtherAmount = yield exchange.getBuyTokenAmount(toSuitableBigNumber(parsedAmount), order.order_id);
             let gasPrice = yield this.getGasPrice();
-            let tx = yield exchange.buyOrderWithEth(order.order_id, { gasPrice: gasPrice, value: toSuitableBigNumber(requiredEtherAmount), gasLimit: gaslimit });
+            let tx = yield exchange.buyOrderWithEth(order.order_id, { gasPrice: gasPrice, value: toSuitableBigNumber(requiredEtherAmount), gasLimit: utils_2.gaslimit });
             return tx.hash;
         });
     }
@@ -254,12 +253,12 @@ class Web3Interface {
     }
     verifyEtherBalance(amount) {
         return __awaiter(this, void 0, void 0, function* () {
-            let parsedAmount = new fraction_js_1.default(amount).mul(new fraction_js_1.default(10).pow(etherDecimals));
+            let parsedAmount = new fraction_js_1.default(amount).mul(new fraction_js_1.default(10).pow(utils_2.etherDecimals));
             let trader = yield this.wallet.getAddress();
             let unparsedBalance = yield this.wallet.provider.getBalance(trader);
             let balance = new fraction_js_1.default(unparsedBalance.toString());
             if (parsedAmount.compare(balance) > 0) {
-                let humanReadableBalance = balance.div(new fraction_js_1.default(10).pow(etherDecimals)).toString();
+                let humanReadableBalance = balance.div(new fraction_js_1.default(10).pow(utils_2.etherDecimals)).toString();
                 throw new Error(`Insufficient ether balance. Requested amount: ${amount}. Available amount: ${humanReadableBalance}`);
             }
         });
@@ -281,16 +280,16 @@ class Web3Interface {
     }
     verifyOrderType(orderType) {
         let types = ["buy", "sell"];
-        if (!lodash_1.default.includes(types, orderType)) {
+        if (!includes_1.default(types, orderType)) {
             throw new Error(`Unknown order type ${orderType}`);
         }
     }
     createERC223OrderPayload(price, buytoken) {
-        let paddedToken = buytoken === '0x0' ? etherAddress : buytoken;
+        let paddedToken = buytoken === '0x0' ? utils_2.etherAddress : buytoken;
         return '0x' + this.toUint(price.n) + this.toUint(price.d) + paddedToken.substring(2);
     }
     toUint(num) {
-        return lodash_1.default.padStart(ethers_1.utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0');
+        return padStart_1.default(ethers_1.utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0');
     }
 }
 exports.Web3Interface = Web3Interface;

@@ -1,6 +1,6 @@
 {
     "name": "@saturnnetwork/saturn.js",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Javascript client for interacting with Saturn Network decentralized exchange",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -34,12 +34,13 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "watch": "tsc -w",
-        "build": "rm -rf dist/* && tsc",
-        "prepublish": "rm -rf dist/* && tsc"
+        "build": "tsc",
+        "prepublish": "tsc"
     },
     "devDependencies": {
         "@types/lodash": "^4.14.119",
-        "typescript": "^3.1.6"
+        "@types/node": "^11.12.2",
+        "typescript": "^3.4"
     },
     "dependencies": {
         "axios": "^0.18.0",

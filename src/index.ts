@@ -2,7 +2,7 @@ import { Signer } from 'ethers'
 import { RequestManager } from './request_manager'
 import { Web3Interface } from './exchange'
 
-import _ from 'lodash'
+import endsWith from 'lodash/endsWith'
 
 interface Web3Options {
   eth?: Signer,
@@ -15,7 +15,7 @@ export class Saturn {
   readonly etc?: Web3Interface
 
   constructor(apiurl: string, wallets?: Web3Options) {
-    if (_.endsWith(apiurl, '/')) { apiurl = apiurl.slice(0, -1) }
+    if (endsWith(apiurl, '/')) { apiurl = apiurl.slice(0, -1) }
     this.query = new RequestManager(apiurl)
     if (wallets) {
       if (wallets.eth) {
