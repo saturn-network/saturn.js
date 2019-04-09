@@ -1,3 +1,4 @@
+import fromExponential from 'from-exponential'
 import Fraction from 'fraction.js'
 import axios from 'axios'
 
@@ -17,7 +18,7 @@ import erc20 from './erc20.json'
 
 let toSuitableBigNumber = function(n : Number | String | BigNumber | Fraction) : BigNumber {
   if (n instanceof BigNumber) { return n }
-  if (n instanceof Fraction) { return utils.bigNumberify(n.valueOf().toString()) }
+  if (n instanceof Fraction) { return utils.bigNumberify(fromExponential(n.valueOf())) }
   try {
     return utils.bigNumberify(n.valueOf())
   } catch(e) {
