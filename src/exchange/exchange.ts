@@ -214,7 +214,7 @@ export class Web3Interface {
   }
 
   private async verifyCapacity(amount: number, order: Order) {
-    if (amount > order.balance) {
+    if (amount > Number(order.balance)) {
       throw new Error(`
         You attempted to trade more tokens (${amount}) than are available in the order (${order.balance}) for order_tx ${order.transaction}.
       `.trim())
