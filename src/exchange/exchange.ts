@@ -16,6 +16,8 @@ import exchange from './exchangeConfig.json'
 import erc223 from './erc223.json'
 import erc20 from './erc20.json'
 
+const BigNumberJS = require('bignumber.js')
+
 let toSuitableBigNumber = function(n : Number | String | BigNumber | Fraction) : BigNumber {
   if (n instanceof BigNumber) { return n }
   if (n instanceof Fraction) { return utils.bigNumberify(fromExponential(n.valueOf())) }
@@ -90,17 +92,23 @@ export class Web3Interface {
     return tx.hash
   }
 
-  private async newBuyOrder(tokenAddress: string, amount: number, price: number, orderContract: string) : Promise<string> {
+  private async newBuyOrder(tokenAddress: string, amount_1: number | string, price_1: number | string,
+      orderContract: string) : Promise<string> {
+
+    let amount = new BigNumberJS(amount_1)
+    let price = new BigNumberJS(price_1)
+
     // we just want to query for decimals, erc20 and erc223 have same method
     let token = new Contract(tokenAddress, erc20 as FunctionFragment[], this.wallet)
     let exchange = new Contract(orderContract, this.exchangeAbi as any, this.wallet)
     let decimals = await token.decimals()
 
     let parsedPrice = new Fraction(price)
-      .mul(new Fraction(10).pow(etherDecimals))
       .div(new Fraction(10).pow(Number(decimals.toString())))
+      .mul(new Fraction(10).pow(etherDecimals))
 
-    let parsedAmount = new Fraction(amount * price).mul(new Fraction(10).pow(etherDecimals))
+    let parsedAmount = amount.times(price).shiftedBy(etherDecimals).toFixed()
+
     let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.sellEther(
