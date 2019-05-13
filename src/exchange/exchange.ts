@@ -18,7 +18,7 @@ import erc20 from './erc20.json'
 
 const BigNumberJS = require('bignumber.js')
 
-let toSuitableBigNumber = function(n : Number | String | BigNumber | Fraction) : BigNumber {
+let toSuitableBigNumber = function(n : number | String | BigNumber | Fraction) : BigNumber {
   if (n instanceof BigNumber) { return n }
   if (n instanceof Fraction) { return utils.bigNumberify(fromExponential(n.valueOf())) }
   try {
@@ -43,39 +43,42 @@ export class Web3Interface {
     this.exchangeAbi = exchange.abi
   }
 
-  async newTrade(amount: number, orderTx: string) {
+  async newTrade(amount_1: number | string, orderTx: string) {
+    let amount = new BigNumberJS(amount_1)
     let order = await this.query.awaitOrderTx(orderTx, this.blockchain)
-    await this.verifyCapacity(amount, order)
+    await this.verifyCapacity(amount.toFixed(), order)
     await this.verifyOrderTradable(order)
 
     if (order.type.toLowerCase() === "sell") {
-      return (await this.newEtherTrade(amount, order))
+      return (await this.newEtherTrade(amount.toFixed(), order))
     } else if (order.type.toLowerCase() === "buy") {
       let tokenAddress = order.buytoken.address
       let tokenType = await this.determineTokenType(tokenAddress)
       if (tokenType === "ERC223") {
-        return (await this.newERC223Trade(tokenAddress, amount, order))
+        return (await this.newERC223Trade(tokenAddress, amount.toFixed(), order))
       } else {
-        return (await this.newERC20Trade(tokenAddress, amount, order))
+        return (await this.newERC20Trade(tokenAddress, amount.toFixed(), order))
       }
     } else {
       throw new Error(`Unknown order type for order_tx ${orderTx} on ${this.blockchain}`)
     }
   }
 
-  async newOrder(tokenAddress: string, orderType: string, amount: number, price: number) {
+  async newOrder(tokenAddress: string, orderType: string, amount_1: number | string, price_1: number | string) {
+    let amount = new BigNumberJS(amount_1)
+    let price = new BigNumberJS(price_1)
     this.verifyOrderType(orderType)
     let tokenType = await this.determineTokenType(tokenAddress)
     let orderContract = await this.query.getExchangeContract(this.blockchain) as string
     if (orderType === "buy") {
-      await this.verifyEtherBalance(amount * price)
-      return (await this.newBuyOrder(tokenAddress, amount, price, orderContract))
+      await this.verifyEtherBalance(amount.times(price))
+      return (await this.newBuyOrder(tokenAddress, amount.toFixed(), price.toFixed(), orderContract))
     } else if (orderType === "sell") {
-      await this.verifyTokenBalance(tokenAddress, amount)
+      await this.verifyTokenBalance(tokenAddress, amount.toFixed())
       if (tokenType === "ERC223") {
-        return (await this.newERC223sellOrder(tokenAddress, amount, price, orderContract))
+        return (await this.newERC223sellOrder(tokenAddress, amount.toFixed(), price.toFixed(), orderContract))
       } else {
-        return (await this.newERC20sellOrder(tokenAddress, amount, price, orderContract))
+        return (await this.newERC20sellOrder(tokenAddress, amount.toFixed(), price.toFixed(), orderContract))
       }
     } else {
       throw new Error(`Unknown order type ${orderType}`)
@@ -103,10 +106,10 @@ export class Web3Interface {
     let exchange = new Contract(orderContract, this.exchangeAbi as any, this.wallet)
     let decimals = await token.decimals()
 
-    let priceMul = new BigNumberJS(price).shiftedBy(etherDecimals)
-    let priceDiv = new BigNumberJS(1).shiftedBy(decimals)
+    let priceMul = new BigNumberJS(price).shiftedBy(etherDecimals)   //
+    let priceDiv = new BigNumberJS(1).shiftedBy(decimals)            // in future we should not need to have these
 
-    let parsedAmount = amount.times(price).shiftedBy(etherDecimals).toFixed()
+    let parsedAmount = amount.times(price).shiftedBy(etherDecimals)
 
     let gasPrice = await this.getGasPrice()
 
@@ -114,102 +117,110 @@ export class Web3Interface {
       tokenAddress,
       toSuitableBigNumber(priceMul.toFixed()),
       toSuitableBigNumber(priceDiv.toFixed()),
-      { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount), gasLimit: gaslimit }
+      { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount.toFixed()), gasLimit: gaslimit }
     )
     return tx.hash
   }
 
-  private async newERC223sellOrder(tokenAddress: string, amount: number, price: number, orderContract: string) : Promise<string> {
+  private async newERC223sellOrder(tokenAddress: string, amount_1: number | string, price_1: number | string,
+       orderContract: string) : Promise<string> {
+
+    let amount = new BigNumberJS(amount_1)
+    let price = new BigNumberJS(price_1)
+
     let token = new Contract(tokenAddress, erc223 as FunctionFragment[], this.wallet)
     let decimals = await token.decimals()
-    let parsedAmount = new Fraction(amount)
-      .mul(new Fraction(10).pow(Number(decimals.toString())))
+    let parsedAmount = amount.shiftedBy(decimals)
 
-    let parsedPrice = new Fraction(price)
-      .mul(new Fraction(10).pow(etherDecimals))
-      .div(new Fraction(10).pow(Number(decimals.toString())))
-    parsedPrice = new Fraction(1).div(parsedPrice)
+    let priceDiv = price.shiftedBy(etherDecimals)                    //
+    let priceMul = new BigNumberJS(1).shiftedBy(decimals)            // This is a mess replacing a mess and probably wrong
 
-    let payload = this.createERC223OrderPayload(parsedPrice, etherAddress)
+    let payload = this.createERC223OrderPayload(priceMul.toFixed(), priceDiv.toFixed(), etherAddress)
     let gasPrice = await this.getGasPrice()
 
     let tx = await token.transfer(
       orderContract,
-      toSuitableBigNumber(parsedAmount),
+      toSuitableBigNumber(parsedAmount.toFixed()),
       payload,
       { gasPrice: gasPrice, gasLimit: gaslimit }
     )
     return tx.hash
   }
 
-  private async newERC20sellOrder(tokenAddress: string, amount: number, price: number, orderContract: string) : Promise<string> {
+  private async newERC20sellOrder(tokenAddress: string, amount_1: number | string, price_1: number | string,
+       orderContract: string) : Promise<string> {
+
+    let amount = new BigNumberJS(amount_1)
+    let price = new BigNumberJS(price_1)
+
     let token = new Contract(tokenAddress, erc20 as FunctionFragment[], this.wallet)
     let exchange = new Contract(orderContract, this.exchangeAbi as any, this.wallet)
     let decimals = await token.decimals()
-    let parsedAmount = new Fraction(amount)
-      .mul(new Fraction(10).pow(Number(decimals.toString())))
 
-    let parsedPrice = new Fraction(price)
-      .mul(new Fraction(10).pow(etherDecimals))
-      .div(new Fraction(10).pow(Number(decimals.toString())))
-    parsedPrice = new Fraction(1).div(parsedPrice)
+    let parsedAmount = amount.shiftedBy(decimals)
 
-    await this.verifyAllowance(token, parsedAmount, orderContract)
+    let priceDiv = price.shiftedBy(etherDecimals)                     //
+    let priceMul = new BigNumberJS(1).shiftedBy(decimals)             // this is a mess replacing a mess
+
+    await this.verifyAllowance(token, parsedAmount.toFixed(), orderContract)
     let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.sellERC20Token(
       tokenAddress,
       etherAddress,
-      toSuitableBigNumber(parsedAmount),
-      toSuitableBigNumber(parsedPrice.n),
-      toSuitableBigNumber(parsedPrice.d),
+      toSuitableBigNumber(parsedAmount.toFixed()),
+      toSuitableBigNumber(priceMul.toFixed()),
+      toSuitableBigNumber(priceDiv.toFixed()),
       { gasPrice: gasPrice, gasLimit: gaslimit }
     )
     return tx.hash
   }
 
-  private async newERC223Trade(tokenAddress: string, amount: number, order: Order) : Promise<string> {
+  private async newERC223Trade(tokenAddress: string, amount_1: number| string, order: Order) : Promise<string> {
+    let amount = new BigNumberJS(amount_1)
     let token = new Contract(tokenAddress, erc223, this.wallet)
-    let parsedAmount = new Fraction(amount)
-      .mul(new Fraction(10).pow(order.buytoken.decimals))
+
+    let parsedAmount = amount.shiftedBy(order.buytoken.decimals)
 
     let payload = '0x' + this.toUint(order.order_id)
     let gasPrice = await this.getGasPrice()
 
     let tx = await token.transfer(
       order.contract,
-      toSuitableBigNumber(parsedAmount),
+      toSuitableBigNumber(parsedAmount.toFixed()),
       payload,
       { gasPrice: gasPrice, gasLimit: gaslimit }
     )
     return tx.hash
   }
 
-  private async newERC20Trade(tokenAddress: string, amount: number, order: Order) : Promise<string> {
+  private async newERC20Trade(tokenAddress: string, amount_1: number | string, order: Order) : Promise<string> {
+    let amount = new BigNumberJS(amount_1)
     let token = new Contract(tokenAddress, erc20 as FunctionFragment[], this.wallet)
     let exchange = new Contract(order.contract, this.exchangeAbi as any, this.wallet)
-    let parsedAmount = new Fraction(amount)
-      .mul(new Fraction(10).pow(order.buytoken.decimals))
 
-    await this.verifyAllowance(token, parsedAmount, order.contract)
+    let parsedAmount = amount.shiftedBy(order.buytoken.decimals)
+
+    await this.verifyAllowance(token, parsedAmount.toFixed(), order.contract)
     let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.buyOrderWithERC20Token(
       order.order_id,
       tokenAddress,
-      toSuitableBigNumber(parsedAmount),
+      toSuitableBigNumber(parsedAmount.toFixed()),
       { gasPrice: gasPrice, gasLimit: gaslimit }
     )
     return tx.hash
   }
 
-  private async newEtherTrade(amount: number, order: Order) : Promise<string> {
+  private async newEtherTrade(amount_1: number | string, order: Order) : Promise<string> {
+    let amount = new BigNumberJS(amount_1)
     let exchange = new Contract(order.contract, this.exchangeAbi as any, this.wallet)
     let token = new Contract(order.selltoken.address, erc20 as FunctionFragment[], this.wallet)
     let decimals = await token.decimals()
-    let parsedAmount = new Fraction(amount).mul(new Fraction(10).pow(decimals))
+    let parsedAmount = amount.shiftedBy(decimals)
     let requiredEtherAmount = await exchange.getBuyTokenAmount(
-      toSuitableBigNumber(parsedAmount),
+      toSuitableBigNumber(parsedAmount.toFixed()),
       order.order_id
     )
     let gasPrice = await this.getGasPrice()
@@ -221,18 +232,20 @@ export class Web3Interface {
     return tx.hash
   }
 
-  private async verifyCapacity(amount: number, order: Order) {
-    if (amount > Number(order.balance)) {
+  private async verifyCapacity(amount_1: number | string, order: Order) {
+    let amount = new BigNumberJS(amount_1)
+    if (amount.gt(BigNumberJS(order.balance))) {
       throw new Error(`
-        You attempted to trade more tokens (${amount}) than are available in the order (${order.balance}) for order_tx ${order.transaction}.
+        You attempted to trade more tokens (${amount.toFixed()}) than are available in the order (${order.balance}) for order_tx ${order.transaction}.
       `.trim())
     }
   }
 
-  private async verifyAllowance(token: Contract, parsedAmount: Fraction, address: string) {
+  private async verifyAllowance(token: Contract, parsedAmount_1: string, address: string) {
+    let parsedAmount = new BigNumberJS(parsedAmount_1)
     let trader = await this.wallet.getAddress()
-    let allowance = new Fraction((await token.allowance(trader, address)).toString())
-    if (parsedAmount.compare(allowance) > 0) {
+    let allowance = new BigNumberJS((await token.allowance(trader, address)).toFixed())
+    if (parsedAmount.gt(allowance)) {
       throw new Error(`Insufficient allowance for token ${token.address}. Please visit https://forum.saturn.network/t/saturnjs-insufficient-allowance-error/2966 to resolve`)
     }
   }
@@ -268,29 +281,31 @@ export class Web3Interface {
     }
   }
 
-  private async verifyTokenBalance(tokenAddress: string, amount: number) {
+  private async verifyTokenBalance(tokenAddress: string, amount_1: number | string) {
+    let amount = new BigNumberJS(amount_1)
     let token = new Contract(tokenAddress, erc20 as FunctionFragment[], this.wallet)
     let trader = await this.wallet.getAddress()
-    let balance = new Fraction((await token.balanceOf(trader)).toString())
+    let balance = new BigNumberJS((await token.balanceOf(trader)).toString())
 
     let decimals = await token.decimals()
-    let parsedAmount = new Fraction(amount).mul(new Fraction(10).pow(decimals))
+    let parsedAmount = amount.shiftedBy(decimals)
 
 
-    if (parsedAmount.compare(balance) > 0) {
-      let humanReadableBalance = balance.div(new Fraction(10).pow(decimals)).toString()
+    if (parsedAmount.gt(balance)) {
+      let humanReadableBalance = balance.shiftedBy(-decimals).toFixed()
       throw new Error(`Insufficient balance for token ${token.address}. Requested amount: ${amount}. Available amount: ${humanReadableBalance}`)
     }
   }
 
-  private async verifyEtherBalance(amount: number) {
-    let parsedAmount = new Fraction(amount).mul(new Fraction(10).pow(etherDecimals))
+  private async verifyEtherBalance(amount_1: number| string) {
+    let amount = new BigNumberJS(amount_1)
+    let parsedAmount = amount.shiftedBy(etherDecimals)
     let trader = await this.wallet.getAddress()
     let unparsedBalance = await this.wallet.provider.getBalance(trader)
-    let balance = new Fraction(unparsedBalance.toString())
+    let balance = new BigNumberJS(unparsedBalance.toString())
 
-    if (parsedAmount.compare(balance) > 0) {
-      let humanReadableBalance = balance.div(new Fraction(10).pow(etherDecimals)).toString()
+    if (parsedAmount.gt(balance)) {
+      let humanReadableBalance = balance.shiftedBy(-etherDecimals).toFixed()
       throw new Error(`Insufficient ether balance. Requested amount: ${amount}. Available amount: ${humanReadableBalance}`)
     }
   }
@@ -316,12 +331,12 @@ export class Web3Interface {
     }
   }
 
-  private createERC223OrderPayload(price: Fraction, buytoken: string) : string {
+  private createERC223OrderPayload(priceMul: string, priceDiv: string, buytoken: string) : string {
     let paddedToken = buytoken === '0x0' ? etherAddress : buytoken
-    return '0x' + this.toUint(price.n) + this.toUint(price.d) + paddedToken.substring(2)
+    return '0x' + this.toUint(priceMul) + this.toUint(priceDiv) + paddedToken.substring(2)
   }
 
-  private toUint(num : number) : string {
+  private toUint(num : number | string) : string {
     return padStart(utils.hexlify(toSuitableBigNumber(num)).substring(2), 64, '0')
   }
 }
