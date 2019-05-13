@@ -104,7 +104,7 @@ export class Web3Interface {
     let decimals = await token.decimals()
 
     let priceMul = new BigNumberJS(price).shiftedBy(etherDecimals)
-    let priceDiv = new BigNumberJS(1).shiftedBy(-decimals)
+    let priceDiv = new BigNumberJS(1).shiftedBy(decimals)
 
     let parsedAmount = amount.times(price).shiftedBy(etherDecimals).toFixed()
 
