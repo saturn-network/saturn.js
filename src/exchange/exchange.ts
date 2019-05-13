@@ -103,9 +103,8 @@ export class Web3Interface {
     let exchange = new Contract(orderContract, this.exchangeAbi as any, this.wallet)
     let decimals = await token.decimals()
 
-    let parsedPrice = new Fraction(price)
-      .div(new Fraction(10).pow(Number(decimals.toString())))
-      .mul(new Fraction(10).pow(etherDecimals))
+    let priceMul = new BigNumberJS(price).shiftedBy(etherDecimals)
+    let priceDiv = new BigNumberJS(1).shiftedBy(-decimals)
 
     let parsedAmount = amount.times(price).shiftedBy(etherDecimals).toFixed()
 
@@ -113,8 +112,8 @@ export class Web3Interface {
 
     let tx = await exchange.sellEther(
       tokenAddress,
-      toSuitableBigNumber(parsedPrice.n),
-      toSuitableBigNumber(parsedPrice.d),
+      toSuitableBigNumber(priceMul.toFixed()),
+      toSuitableBigNumber(priceDiv.toFixed()),
       { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount), gasLimit: gaslimit }
     )
     return tx.hash
