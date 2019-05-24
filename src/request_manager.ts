@@ -1,5 +1,6 @@
 import axios from 'axios'
 import ora from 'ora'
+import { Color } from 'ora'
 import isUndefined from 'lodash/isUndefined'
 
 import { Transaction, Order, Trade, Token } from './exchange/types'
@@ -161,7 +162,7 @@ export class RequestManager {
     return result.data
   }
 
-  private pickColor(blockchain: string) : string {
+  private pickColor(blockchain: string) : Color {
     let b = blockchain.toUpperCase()
     if (b == 'ETH') { return 'gray' }
     if (b == 'ETC') { return 'green'  }
