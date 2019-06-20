@@ -17,7 +17,9 @@ import erc20 from './erc20.json'
 
 let toSuitableBigNumber = function(n : number | String | BigNumber | BigNumberJS ) : BigNumber {
   if (n instanceof BigNumber) { return n }
-  if (n instanceof BigNumberJS) { return utils.bigNumberify(n.toFixed()) }
+  if (n instanceof BigNumberJS) {
+    return utils.bigNumberify(n.integerValue(BigNumberJS.ROUND_DOWN).toFixed())
+  }
   try {
     return utils.bigNumberify(n.valueOf())
   } catch(e) {
