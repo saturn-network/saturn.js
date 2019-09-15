@@ -79,3 +79,21 @@ export interface Token {
   price24hr: number
   volume24hr: number
 }
+
+export interface Ohlcv {
+  time: number
+  volume: string
+  open: string
+  high: string
+  low: string
+  close: string
+}
+
+export interface Orderbook {
+  buys: Order[]
+  sells: Order[]
+}
+export interface TradeHistory {
+  buys: Trade[]
+  sells: Trade[]
+}

@@ -3,7 +3,12 @@ import ora from 'ora'
 import { Color } from 'ora'
 import isUndefined from 'lodash/isUndefined'
 
-import { Transaction, Order, Trade, Token } from './exchange/types'
+import {
+  Transaction, Order,
+  Trade, Token, Orderbook,
+  TradeHistory, Ohlcv
+} from './exchange/types'
+
 import { Web3Interface } from './exchange'
 import { etherAddress, gaslimit, sleep } from './utils'
 
@@ -135,7 +140,7 @@ export class RequestManager {
     return result.data.buy_orders.concat(result.data.sell_orders)
   }
 
-  async orderbook(token: string, blockchain: string) : Promise<object> {
+  async orderbook(token: string, blockchain: string) : Promise<Orderbook> {
     let url = `${this.apiurl}/orders/${blockchain}/${token}/${etherAddress}/all.json`
     let result : any = await axios.get(url)
     if (result == null) {
@@ -144,7 +149,7 @@ export class RequestManager {
     return result.data
   }
 
-  async ohlcv(token: string, blockchain: string) : Promise<object> {
+  async ohlcv(token: string, blockchain: string) : Promise<Array<Ohlcv>> {
     let url = `${this.apiurl}/tokens/ohlcv/${blockchain}/${token}/24h.json`
     let result : any = await axios.get(url)
     if (result == null) {
@@ -153,7 +158,7 @@ export class RequestManager {
     return result.data
   }
 
-  async tradeHistory(token: string, blockchain: string) : Promise<object> {
+  async tradeHistory(token: string, blockchain: string) : Promise<TradeHistory> {
     let url = `${this.apiurl}/trades/${blockchain}/${token}/${etherAddress}/all.json`
     let result : any = await axios.get(url)
     if (result == null) {
