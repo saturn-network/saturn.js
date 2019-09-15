@@ -2,7 +2,6 @@ import axios from 'axios'
 import ora from 'ora'
 import { Color } from 'ora'
 import isUndefined from 'lodash/isUndefined'
-import meanBy from 'lodash/meanBy'
 
 import {
   Transaction, Order,
@@ -157,17 +156,6 @@ export class RequestManager {
       return Promise.reject(new Error(`Unable to fetch ohlcv for token ${blockchain}:${token}`))
     }
     return result.data
-  }
-
-  async getRSI(token : string, blockchain: string, periods : number | boolean = false) : Promise<number> {
-      if (typeof periods === 'boolean') periods = 14
-      let ohlcvdata : Ohlcv[] = await this.ohlcv(token, blockchain)
-      let period = ohlcvdata.slice(periods * -1)
-      let avgOpen = meanBy(period, (p) => Number(p.open))
-      let avgClose = meanBy(period, (p) => Number(p.close))
-      let RS = avgClose / avgOpen
-      let RSI = 100 - (100 / (1 + RS))
-      return RSI
   }
 
   async tradeHistory(token: string, blockchain: string) : Promise<TradeHistory> {
