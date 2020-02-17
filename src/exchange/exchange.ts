@@ -1,5 +1,4 @@
 import { BigNumber as BigNumberJS } from 'bignumber.js'
-import axios from 'axios'
 
 import includes from 'lodash/includes'
 import padStart from 'lodash/padStart'
@@ -91,10 +90,9 @@ export class Web3Interface {
 
   async cancelOrder(orderId: number, contract: string) : Promise<string> {
     let exchange = new Contract(contract, this.exchangeAbi as any, this.wallet)
-    let gasPrice = await this.getGasPrice()
     let tx = await exchange.cancelOrder(
       orderId,
-      { gasPrice: gasPrice, gasLimit: gaslimit }
+      { gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -115,13 +113,11 @@ export class Web3Interface {
 
     let parsedAmount = amount.times(price).shiftedBy(etherDecimals)
 
-    let gasPrice = await this.getGasPrice()
-
     let tx = await exchange.sellEther(
       tokenAddress,
       toSuitableBigNumber(priceMul),
       toSuitableBigNumber(priceDiv),
-      { gasPrice: gasPrice, value: toSuitableBigNumber(parsedAmount), gasLimit: gaslimit }
+      { value: toSuitableBigNumber(parsedAmount), gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -145,13 +141,11 @@ export class Web3Interface {
       etherAddress
     )
 
-    let gasPrice = await this.getGasPrice()
-
     let tx = await token.transfer(
       orderContract,
       toSuitableBigNumber(parsedAmount),
       payload,
-      { gasPrice: gasPrice, gasLimit: gaslimit }
+      { gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -172,7 +166,6 @@ export class Web3Interface {
     let priceMul = new BigNumberJS(1).shiftedBy(decimals)
 
     await this.verifyAllowance(token, parsedAmount, orderContract)
-    let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.sellERC20Token(
       tokenAddress,
@@ -180,7 +173,7 @@ export class Web3Interface {
       toSuitableBigNumber(parsedAmount),
       toSuitableBigNumber(priceMul),
       toSuitableBigNumber(priceDiv),
-      { gasPrice: gasPrice, gasLimit: gaslimit }
+      { gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -195,13 +188,12 @@ export class Web3Interface {
     let parsedAmount = amount.shiftedBy(order.buytoken.decimals)
 
     let payload = '0x' + this.toUint(order.order_id)
-    let gasPrice = await this.getGasPrice()
 
     let tx = await token.transfer(
       order.contract,
       toSuitableBigNumber(parsedAmount),
       payload,
-      { gasPrice: gasPrice, gasLimit: gaslimit }
+      { gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -217,13 +209,12 @@ export class Web3Interface {
     let parsedAmount = amount.shiftedBy(order.buytoken.decimals)
 
     await this.verifyAllowance(token, parsedAmount, order.contract)
-    let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.buyOrderWithERC20Token(
       order.order_id,
       tokenAddress,
       toSuitableBigNumber(parsedAmount.toFixed()),
-      { gasPrice: gasPrice, gasLimit: gaslimit }
+      { gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -237,11 +228,10 @@ export class Web3Interface {
       toSuitableBigNumber(parsedAmount.toFixed()),
       order.order_id
     )
-    let gasPrice = await this.getGasPrice()
 
     let tx = await exchange.buyOrderWithEth(
       order.order_id,
-      { gasPrice: gasPrice, value: toSuitableBigNumber(requiredEtherAmount), gasLimit: gaslimit }
+      { value: toSuitableBigNumber(requiredEtherAmount), gasLimit: gaslimit }
     )
     return tx.hash
   }
@@ -256,7 +246,8 @@ export class Web3Interface {
 
   private async verifyAllowance(token: Contract, parsedAmount: BigNumberJS, address: string) {
     let trader = await this.wallet.getAddress()
-    let allowance = new BigNumberJS((await token.allowance(trader, address)).toFixed())
+    let rawAllowance = await token.allowance(trader, address)
+    let allowance = new BigNumberJS(rawAllowance.toString())
     if (parsedAmount.isGreaterThan(allowance)) {
       throw new Error(`Insufficient allowance for token ${token.address}. Please visit https://forum.saturn.network/t/saturnjs-insufficient-allowance-error/2966 to resolve`)
     }
@@ -318,20 +309,6 @@ export class Web3Interface {
       let humanReadableBalance = balance.shiftedBy(-etherDecimals).toFixed()
       throw new Error(`Insufficient ether balance. Requested amount: ${amount}. Available amount: ${humanReadableBalance}`)
     }
-  }
-
-  private async getGasPrice() : Promise<number> {
-    if (process.env.GAS_PRICE) {
-      return Number(process.env.GAS_PRICE)
-    }
-    if (this.blockchain.toUpperCase() === "ETC") {
-      return 1000000
-    }
-    if (this.blockchain.toUpperCase() === "ETH") {
-      let gasApiUrl = 'https://www.ethgasstationapi.com/api/standard'
-      return (await axios.get(gasApiUrl)).data * 1000000000
-    }
-    throw new Error(`Unknown blockchain ${this.blockchain}`)
   }
 
   private verifyOrderType(orderType: string) {
