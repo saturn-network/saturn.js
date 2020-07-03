@@ -1,6 +1,6 @@
 {
     "name": "@saturnnetwork/saturn.js",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Javascript client for interacting with Saturn Network decentralized exchange",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
